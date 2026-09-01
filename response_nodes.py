@@ -8,34 +8,50 @@ def insufficient_response_node(state: SalesState):
     
 # Final response node 
 
-def response_node(state: SalesState): 
- 
-    recommendation = state["recommendation"] 
- 
-    lines = [] 
- 
-    lines.append( 
-        recommendation["summary"] 
-    ) 
- 
-    lines.append("") 
- 
-    for item in recommendation["recommendations"]: 
- 
-        lines.append( 
-            f"• {item['product_id']}: " 
-            f"{item['reason']}" 
-        ) 
- 
-        if item.get("tradeoff"): 
- 
-            lines.append( 
-                f"  Trade-off: {item['tradeoff']}" 
-            ) 
- 
-    return { 
-        "response": "\n".join(lines) 
-    } 
+def response_node(state: SalesState):
+
+    recommendation = state["recommendation"]
+
+    lines = []
+
+    # Summary
+    lines.append(
+        recommendation["summary"]
+    )
+
+    lines.append("")
+
+    # Recommendations
+    for item in recommendation["recommendations"]:
+
+        lines.append(
+            f"### {item['product_id']}"
+        )
+
+        lines.append(
+            f"- **Why it fits:** {item['reason']}"
+        )
+
+        if item.get("price"):
+            lines.append(
+                f"- **Price:** ₹{item['price']}"
+            )
+
+        if item.get("tradeoff"):
+            lines.append(
+                f"- **Trade-off:** {item['tradeoff']}"
+            )
+
+        lines.append("")
+
+    # Closing message
+    lines.append(
+        "Thank you for choosing **Oak & Ember Interiors**!"
+    )
+
+    return {
+        "response": "\n".join(lines)
+    }
     
 #Blocked Response Node for Guardrail Violations or Unmatched Products
 def blocked_response_node(state: SalesState):

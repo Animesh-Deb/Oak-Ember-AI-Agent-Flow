@@ -6,6 +6,10 @@ from state import SalesState
 from response_nodes import insufficient_response_node, response_node, blocked_response_node, unsubscribed_response_node, no_match_response_node
 from langfuse_config import langfuse 
 from langfuse import get_client
+from datetime import datetime
+from google_sheets import store_enquiry
+from state import CustomerEnquiry
+from langchain_openai import ChatOpenAI
 
 langfuse = get_client()
 
@@ -364,6 +368,159 @@ def ranking_node(state: SalesState):
         "eligible_products": ranked.to_dict(
             orient="records"
         )
+    }
+    
+def store_enquiry_node(state: SalesState):
+
+    needs = state.get("needs")
+
+    eligible_products = state.get(
+        "eligible_products",
+        []
+    )
+
+    product_ids = [
+        product.get("product_id", "")
+        for product in eligible_products
+    ]
+
+    enquiry = {
+        "timestamp": datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
+
+        "source": state.get(
+            "source",
+            ""
+        ),
+
+        "name": state.get(
+            "name",
+            ""
+        ),
+
+        "email": state.get(
+            "email",
+            ""
+        ),
+
+        "contact": state.get(
+            "contact",
+            ""
+        ),
+
+        "category": (
+            needs.category
+            if needs
+            else ""
+        ),
+
+        "budget": (
+            needs.budget
+            if needs
+            else ""
+        ),
+
+        "query": state.get(
+            "query",
+            ""
+        ),
+
+        "product_ids": ", ".join(
+            product_ids
+        ),
+
+        "thread_id": state.get(
+            "thread_id",
+            ""
+        )
+    }
+
+    store_enquiry(enquiry)
+
+    return {}
+
+def extract_customer_enquiry(query: str) -> CustomerEnquiry:
+
+    structured_llm = llm.with_structured_output(
+        CustomerEnquiry
+    )
+
+    prompt = f"""
+    Extract the customer enquiry details from the message below.
+
+    Extract only information that is explicitly provided.
+    If a field is not provided, leave it empty.
+    Extract:
+
+    - name: customer's name
+    - email: customer's email address
+    - contact: customer's phone/contact number
+    - category: product category
+    - budget: customer's stated budget
+    - all other fields defined in the CustomerEnquiry schema
+
+    Important:
+    - Extract information explicitly provided by the customer.
+    - Do not invent missing information.
+    - If a field is not provided, return an empty string.
+
+    Customer message:
+    {query}
+    """
+
+    result = structured_llm.invoke(prompt)
+
+    return result
+
+def customer_enquiry_node(state: SalesState):
+
+    enquiry = extract_customer_enquiry(
+        state.get("query", "")
+    )
+
+    final_name = (
+        state.get("name")
+        or enquiry.name
+        or ""
+    )
+
+    final_email = (
+        state.get("email")
+        or enquiry.email
+        or ""
+    )
+
+    final_contact = (
+        state.get("contact")
+        or enquiry.contact
+        or ""
+    )
+
+    print("\n===== CUSTOMER ENQUIRY DEBUG =====")
+
+    print("Query:", state.get("query"))
+
+    print("\nLLM Extracted:")
+    print("Name:", enquiry.name)
+    print("Email:", enquiry.email)
+    print("Contact:", enquiry.contact)
+    print("Category:", enquiry.category)
+    print("Budget:", enquiry.budget)
+
+    print("\nFinal Values:")
+    print("Name:", final_name)
+    print("Email:", final_email)
+    print("Contact:", final_contact)
+
+    print("==================================\n")
+
+    return {
+        "name": final_name,
+        "email": final_email,
+        "contact": final_contact,
+        "category": enquiry.category,
+        "budget": enquiry.budget
     }
 
 

@@ -35,6 +35,7 @@ class IntentResult(BaseModel):
 class ProductRecommendation(BaseModel): 
     product_id: str 
     reason: str 
+    price: float
     tradeoff: str | None = None
     
 #Final response 
@@ -51,7 +52,11 @@ class SalesState(TypedDict, total=False):
  
     # Conversation 
     query: str 
+    source: str
     thread_id: str 
+    name: str
+    email: str
+    contact: str
     messages: Annotated[ 
         list, 
         add_messages 
@@ -88,3 +93,11 @@ class SalesState(TypedDict, total=False):
  
     # Error 
     error: str
+    
+class CustomerEnquiry(BaseModel):
+
+    name: str = ""
+    email: str = ""
+    contact: str = ""
+    category: str = ""
+    budget: str = ""

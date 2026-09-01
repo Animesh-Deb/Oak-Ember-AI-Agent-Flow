@@ -1,3 +1,4 @@
 .env
 gmail_credentials.json
 gmail_token.json
+google_service_account.json

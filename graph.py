@@ -7,7 +7,10 @@ from langgraph.graph import (
 from langgraph.checkpoint.memory import MemorySaver 
  
 from state import SalesState 
- 
+from sales_nodes import (
+    customer_enquiry_node,
+    store_enquiry_node
+)
 from guaradrail_nodes import ( 
     guardrail_node 
 ) 
@@ -116,7 +119,10 @@ builder.add_node(
     "clarification", 
     clarification_node 
 )
-
+builder.add_node(
+    "customer_enquiry",
+    customer_enquiry_node
+)
 builder.add_node(
     "insufficient",
     insufficient_response_node
@@ -133,7 +139,10 @@ builder.add_node(
     "filter",
     filtering_node
 )
-
+builder.add_node(
+    "store_enquiry",
+    store_enquiry_node
+)
 
 
 # Product ranking
@@ -304,13 +313,20 @@ builder.add_edge(
     "validation"
 )
 
-
+builder.add_edge(
+    "validation",
+    "customer_enquiry"
+)
+builder.add_edge(
+    "customer_enquiry",
+    "store_enquiry"
+)
 # ============================================================
 # VALIDATION → RESPONSE
 # ============================================================
 
 builder.add_edge(
-    "validation",
+    "store_enquiry",
     "response"
 )
 

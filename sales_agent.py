@@ -13,7 +13,8 @@ def chat_with_sales_agent(
 
     result = sales_graph.invoke(
         {
-            "query": message
+            "query": message,
+             "source": "chat"
         },
         config=config
     )

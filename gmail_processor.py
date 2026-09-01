@@ -1,13 +1,15 @@
 import time 
 from gmail_services import ( 
-get_gmail_service, 
-get_unread_emails, 
-get_email, 
-extract_email_information, 
-send_email_reply, 
-mark_as_read 
+    get_gmail_service,
+    get_unread_emails,
+    get_email,
+    extract_email_information,
+    send_email_reply,
+    mark_as_read,
+    recommendation_to_html
 ) 
 from graph import sales_graph 
+from email.utils import parseaddr
 # ============================================================ 
 # EMAIL ADDRESS EXTRACTION 
 # ============================================================ 
@@ -30,26 +32,72 @@ def extract_email_address(sender):
 # BUILD CUSTOMER EMAIL 
 # ============================================================ 
  
-def build_customer_email(result): 
- 
-    response = result.get( 
-        "response", 
-        "" 
-    ) 
- 
-    return f"""Hello, 
- 
-Thank you for contacting Oak & Ember Interiors. 
- 
-{response} 
- 
-Please verify current price and availability before purchasing. 
- 
-Thank you, 
-Oak & Ember Interiors 
-Intelligent Furniture Recommendations 
-""" 
- 
+def build_customer_email(result):
+
+    recommendation = result.get("recommendation")
+    plain_response = result.get("response")
+
+    # ------------------------------------------------------
+    # CASE 1: We have a structured recommendation -> table
+    # ------------------------------------------------------
+    if recommendation:
+
+        recommendation_html = recommendation_to_html(
+            recommendation
+        )
+        # recommendation_to_html already returns a full
+        # <html><body>...</body></html> document (summary,
+        # table, verify-price note, sign-off) - send it as-is,
+        # do NOT wrap it in another <html> document.
+        return recommendation_html
+
+    # ------------------------------------------------------
+    # CASE 2: No recommendation, but a node produced a
+    # specific message (clarification, no-match, blocked,
+    # unsubscribe, insufficient info) -> use it, don't
+    # replace it with a generic fallback.
+    # ------------------------------------------------------
+    if plain_response:
+
+        return f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+
+            <p>Hello,</p>
+
+            <p>{plain_response}</p>
+
+            <p>
+            Thank you,<br>
+            <strong>Oak &amp; Ember Interiors</strong>
+            </p>
+
+        </body>
+        </html>
+        """
+
+    # ------------------------------------------------------
+    # CASE 3: Truly nothing to say (shouldn't normally happen)
+    # ------------------------------------------------------
+    return """
+    <html>
+    <body style="font-family: Arial, sans-serif;">
+
+    <p>Hello,</p>
+
+    <p>
+    Thank you for contacting <strong>Oak &amp; Ember Interiors</strong>.
+    We were unable to process your request at this time. Please try again.
+    </p>
+
+    <p>
+    Thank you,<br>
+    Oak &amp; Ember Interiors
+    </p>
+
+    </body>
+    </html>
+    """
  
 # ============================================================ 
 # PROCESS ONE EMAIL 
@@ -102,9 +150,10 @@ def process_email(
     result = sales_graph.invoke( 
  
         { 
-            "query": body 
-        }, 
- 
+            "query": body, 
+            "source": "email",
+            "email": sender
+        },
         config={ 
             "configurable": { 
                 "thread_id": graph_thread_id 

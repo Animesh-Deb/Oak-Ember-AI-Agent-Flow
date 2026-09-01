@@ -78,7 +78,7 @@ if "messages" not in st.session_state:
 
 st.markdown(
     "<h1 style='text-align: center; font-style: italic;'>"
-    "Oak & Ember Interiors"
+    "Oak & Ember Interiors - Sales Genie"
     "</h1>",
     unsafe_allow_html=True
 )
@@ -93,7 +93,8 @@ st.markdown(
 st.markdown(
     "<p style='text-align: center; font-size: 18px;'>"
     "Please provide your furniture requirements below, specify "
-    "furniture category, budget, and any specific features you desire."
+    "furniture category, budget, and any specific features you desire. Kindly share your name," 
+     "email address and contact number for further communication."
     "</p>",
     unsafe_allow_html=True
 )

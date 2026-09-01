@@ -93,13 +93,18 @@ def generate_recommendation(
     {product_context}
 
     For each recommendation:
-    - explain why it fits
-    - mention an honest trade-off
-    - use the exact product ID
-    - provide the price
-    - do not invent product information
-    - do not change prices
-    - do not invent features
+    - Use the exact product ID from the eligible products.
+    - Use the EXACT price from the eligible products.
+    - Provide the price even if the customer did not explicitly ask for it.
+    - Explain why it fits.
+    - Mention an honest trade-off.
+    - Do not invent product information.
+    - Do not change prices.
+    - Do not invent features.
+
+    Return a structured recommendation.
+
+    If the customer asks specifically for price, make sure the price is explicitly included.
     """
 
     with langfuse.start_as_current_observation(

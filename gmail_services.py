@@ -6,6 +6,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request 
 from google_auth_oauthlib.flow import InstalledAppFlow 
 from googleapiclient.discovery import build 
+from html import escape
 # ============================================================ 
 # GMAIL CONFIGURATION 
 # ============================================================ 
@@ -249,45 +250,182 @@ def extract_email_information(
         "message_id": message_id, 
         "thread_id": thread_id 
     } 
+ #===========================================================
+ #HTML Formatting
  
+ 
+
+
+def recommendation_to_html(recommendation):
+
+    rows = ""
+
+    for item in recommendation.get("recommendations", []):
+
+        product_id = escape(
+            str(item.get("product_id", ""))
+        )
+
+        price = item.get("price", "")
+
+        reason = escape(
+            str(item.get("reason", ""))
+        )
+
+        tradeoff = escape(
+            str(item.get("tradeoff", ""))
+        )
+
+        rows += f"""
+        <tr>
+            <td style="border:1px solid #ddd; padding:10px;">
+                <strong>{product_id}</strong>
+            </td>
+
+            <td style="border:1px solid #ddd; padding:10px;">
+                ₹{price}
+            </td>
+
+            <td style="border:1px solid #ddd; padding:10px;">
+                {reason}
+            </td>
+
+            <td style="border:1px solid #ddd; padding:10px;">
+                {tradeoff}
+            </td>
+        </tr>
+        """
+
+    summary = escape(
+        str(
+            recommendation.get(
+                "summary",
+                "Here are the products that best match your requirements."
+            )
+        )
+    )
+
+    html = f"""
+    <html>
+    <body style="
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        color: #333;
+    ">
+
+        <p>{summary}</p>
+
+        <table style="
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 900px;
+        ">
+
+            <thead>
+                <tr style="background-color:#f2f2f2;">
+
+                    <th style="
+                        border:1px solid #ddd;
+                        padding:10px;
+                        text-align:left;
+                    ">
+                        Product
+                    </th>
+
+                    <th style="
+                        border:1px solid #ddd;
+                        padding:10px;
+                        text-align:left;
+                    ">
+                        Price
+                    </th>
+
+                    <th style="
+                        border:1px solid #ddd;
+                        padding:10px;
+                        text-align:left;
+                    ">
+                        Why it fits
+                    </th>
+
+                    <th style="
+                        border:1px solid #ddd;
+                        padding:10px;
+                        text-align:left;
+                    ">
+                        Trade-off
+                    </th>
+
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {rows}
+
+            </tbody>
+
+        </table>
+
+        <br>
+
+        <p>
+            Please verify current price and availability before purchasing.
+        </p>
+
+        <p>
+            Thank you for choosing
+            <strong>Oak &amp; Ember Interiors</strong>!
+        </p>
+
+        <p>
+            Regards,<br>
+            <strong>Oak &amp; Ember Interiors</strong><br>
+            Intelligent Furniture Recommendations
+        </p>
+
+    </body>
+    </html>
+    """
+
+    return html
  
 # ============================================================ 
 # SEND EMAIL REPLY 
 # ============================================================ 
  
-def send_email_reply( 
-    service, 
-    recipient, 
-    subject, 
-    body, 
-    thread_id 
-): 
- 
-    message = MIMEText( 
-        body, 
-        "plain", 
-        "utf-8" 
-    ) 
- 
-    message["To"] = recipient 
-    message["Subject"] = subject 
- 
-    raw_message = base64.urlsafe_b64encode( 
-        message.as_bytes() 
-    ).decode() 
- 
-    gmail_message = { 
-        "raw": raw_message, 
-        "threadId": thread_id 
-    } 
- 
-    result = service.users().messages().send( 
-        userId="me", 
-        body=gmail_message 
-    ).execute() 
- 
-    return result 
- 
+def send_email_reply(
+    service,
+    recipient,
+    subject,
+    body,
+    thread_id
+):
+
+    message = MIMEText(
+        body,
+        "html",
+        "utf-8"
+    )
+
+    message["To"] = recipient
+    message["Subject"] = subject
+
+    raw_message = base64.urlsafe_b64encode(
+        message.as_bytes()
+    ).decode()
+
+    gmail_message = {
+        "raw": raw_message,
+        "threadId": thread_id
+    }
+
+    result = service.users().messages().send(
+        userId="me",
+        body=gmail_message
+    ).execute()
+
+    return result
  
 # ============================================================ 
 # MARK EMAIL AS READ 
