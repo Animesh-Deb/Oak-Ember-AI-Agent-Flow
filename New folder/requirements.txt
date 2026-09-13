@@ -1,0 +1,9 @@
+langchain
+langchain-openai
+langchain-community
+langgraph
+langfuse
+faiss-cpu
+pydantic
+numpy
+pandas
